@@ -351,3 +351,229 @@ body {
 
 .btn-add:hover  { background: var(--btn-add-hover); }
 .btn-add:active { background: var(--btn-add-active); }
+
+/* ── Profile view ────────────────────────────── */
+.card { cursor: pointer; }
+
+.profile-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.profile-hero {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 20px 16px 16px;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.22s ease;
+}
+
+.profile-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  text-transform: uppercase;
+  user-select: none;
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.profile-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  transition: color 0.22s ease;
+}
+
+.profile-url {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-align: center;
+  word-break: break-all;
+  transition: color 0.22s ease;
+}
+
+.profile-btns {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btn-profile-open {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.btn-profile-open:hover {
+  border-color: #1a73e8;
+  color: #1a73e8;
+  background: rgba(26, 115, 232, 0.07);
+}
+
+.btn-profile-open:active { transform: scale(0.96); }
+
+.profile-notes-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-notes-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0 2px;
+  transition: color 0.22s ease;
+}
+
+/* ── Add form ────────────────────────────────── */
+.notes-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.notes-add-input {
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--input-bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  outline: none;
+  resize: none;
+  transition: border-color 0.15s, background 0.15s, color 0.22s ease;
+}
+
+.notes-add-input::placeholder { color: var(--text-muted); }
+.notes-add-input:focus { border-color: #1a73e8; background: var(--input-focus-bg); }
+
+.notes-add-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.notes-add-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  transition: color 0.22s ease;
+}
+
+.btn-note-add {
+  padding: 5px 14px;
+  background: var(--btn-add);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-note-add:hover  { background: var(--btn-add-hover); }
+.btn-note-add:active { background: var(--btn-add-active); }
+
+/* ── Notes list ──────────────────────────────── */
+.notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 148px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar) transparent;
+}
+
+.notes-list::-webkit-scrollbar { width: 4px; }
+.notes-list::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 2px; }
+
+.notes-empty {
+  padding: 10px 2px 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+  transition: color 0.22s ease;
+}
+
+.note-card {
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 8px 10px;
+  box-shadow: var(--card-shadow);
+  flex-shrink: 0;
+  transition: background 0.22s ease;
+}
+
+.note-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.note-card-date {
+  font-size: 11px;
+  color: var(--text-muted);
+  transition: color 0.22s ease;
+}
+
+.note-card-delete {
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.note-card-delete:hover {
+  background: var(--delete-hover-bg);
+  color: var(--delete-hover-clr);
+}
+
+.note-card-text {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  transition: color 0.22s ease;
+}

@@ -53,6 +53,119 @@ function showView(id, direction) {
   }
 }
 
+/* ── Профиль ───────────────────────────────────── */
+let currentProfileId = null;
+
+function getNotes(link) {
+  if (typeof link.notes === 'string' && link.notes.trim()) {
+    return [{ id: 'legacy', text: link.notes, createdAt: link.createdAt || Date.now() }];
+  }
+  return Array.isArray(link.notes) ? link.notes : [];
+}
+
+function formatNoteDate(ts) {
+  const d     = new Date(ts);
+  const today = new Date();
+  const yest  = new Date(today);
+  yest.setDate(today.getDate() - 1);
+  const time  = d.toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' });
+  if (d.toDateString() === today.toDateString()) return `Сегодня, ${time}`;
+  if (d.toDateString() === yest.toDateString())  return `Вчера, ${time}`;
+  const opts = { day: 'numeric', month: 'long' };
+  if (d.getFullYear() !== today.getFullYear()) opts.year = 'numeric';
+  return `${d.toLocaleDateString('ru', opts)}, ${time}`;
+}
+
+function renderNotes(notes) {
+  const list = document.getElementById('notesList');
+  list.innerHTML = '';
+
+  if (!notes.length) {
+    const empty = document.createElement('div');
+    empty.className = 'notes-empty';
+    empty.textContent = 'Заметок пока нет';
+    list.appendChild(empty);
+    return;
+  }
+
+  [...notes].sort((a, b) => b.createdAt - a.createdAt).forEach((note) => {
+    const card = document.createElement('div');
+    card.className = 'note-card';
+
+    const header = document.createElement('div');
+    header.className = 'note-card-header';
+
+    const date = document.createElement('span');
+    date.className = 'note-card-date';
+    date.textContent = formatNoteDate(note.createdAt);
+
+    const del = document.createElement('button');
+    del.className = 'note-card-delete';
+    del.title = 'Удалить заметку';
+    del.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+      <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.2"
+        stroke-linecap="round"/>
+    </svg>`;
+    del.addEventListener('click', () => deleteNote(currentProfileId, note.id));
+
+    header.appendChild(date);
+    header.appendChild(del);
+
+    const text = document.createElement('div');
+    text.className = 'note-card-text';
+    text.textContent = note.text;
+
+    card.appendChild(header);
+    card.appendChild(text);
+    list.appendChild(card);
+  });
+}
+
+function addNote(linkId, text) {
+  if (!text.trim()) return;
+  const newNote = { id: Date.now().toString(), text: text.trim(), createdAt: Date.now() };
+  chrome.storage.local.get(STORAGE_KEY, (result) => {
+    const links = (result[STORAGE_KEY] || []).map((l) => {
+      if (l.id !== linkId) return l;
+      return { ...l, notes: [newNote, ...getNotes(l)] };
+    });
+    saveLinks(links, () => {
+      const updated = cachedLinks.find((l) => l.id === linkId);
+      if (updated) renderNotes(getNotes(updated));
+      document.getElementById('noteInput').value = '';
+    });
+  });
+}
+
+function deleteNote(linkId, noteId) {
+  chrome.storage.local.get(STORAGE_KEY, (result) => {
+    const links = (result[STORAGE_KEY] || []).map((l) => {
+      if (l.id !== linkId) return l;
+      return { ...l, notes: getNotes(l).filter((n) => n.id !== noteId) };
+    });
+    saveLinks(links, () => {
+      const updated = cachedLinks.find((l) => l.id === linkId);
+      if (updated) renderNotes(getNotes(updated));
+    });
+  });
+}
+
+function openProfileView(link, direction = 'forward') {
+  currentProfileId = link.id;
+  document.getElementById('profileTitle').textContent = link.name;
+
+  const avatar = document.getElementById('profileAvatar');
+  avatar.style.background = avatarColor(link.name);
+  avatar.textContent = initials(link.name);
+
+  document.getElementById('profileName').textContent = link.name;
+  document.getElementById('profileUrl').textContent  = link.url.replace('https://', '');
+  document.getElementById('noteInput').value = '';
+  renderNotes(getNotes(link));
+
+  showView('viewProfile', direction);
+}
+
 /* ── Карточки ──────────────────────────────────── */
 const AVATAR_COLORS = [
   '#1a73e8', '#00897b', '#e8710a', '#8430ce',
@@ -131,10 +244,12 @@ function deleteLink(id) {
   });
 }
 
-let currentEditId = null;
+let currentEditId     = null;
+let currentEditReturn = 'viewList';
 
-function openEditView(link) {
-  currentEditId = link.id;
+function openEditView(link, returnTo = 'viewList') {
+  currentEditId     = link.id;
+  currentEditReturn = returnTo;
   document.getElementById('inputName').value = link.name;
   document.getElementById('inputUrl').value  = link.url;
   document.getElementById('urlError').textContent = '';
@@ -146,7 +261,8 @@ function openEditView(link) {
 }
 
 function resetAddForm() {
-  currentEditId = null;
+  currentEditId     = null;
+  currentEditReturn = 'viewList';
   document.getElementById('inputName').value = '';
   document.getElementById('inputUrl').value  = '';
   document.getElementById('urlError').textContent = '';
@@ -186,9 +302,15 @@ function saveLink() {
       links = [{ id: Date.now().toString(), name, url, createdAt: Date.now() }, ...links];
     }
 
+    const returnTo = currentEditReturn;
+    const editedId = currentEditId;
     saveLinks(links, () => {
       resetAddForm();
       applySearch();
+      if (returnTo === 'viewProfile') {
+        const updated = cachedLinks.find((l) => l.id === editedId);
+        if (updated) { openProfileView(updated, 'back'); return; }
+      }
       showView('viewList', 'back');
     });
   });
@@ -294,6 +416,11 @@ function createCard(link) {
     deleteLink(link.id);
   });
 
+  card.addEventListener('click', () => {
+    const fresh = cachedLinks.find((l) => l.id === link.id) || link;
+    openProfileView(fresh);
+  });
+
   return card;
 }
 
@@ -354,5 +481,39 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('inputUrl').addEventListener('keydown', (e) => {
     if (e.key === 'Enter')  saveLink();
     if (e.key === 'Escape') showView('viewList', 'back');
+  });
+
+  document.getElementById('btnProfileBack').addEventListener('click', () => {
+    showView('viewList', 'back');
+  });
+
+  document.getElementById('profileEdit').addEventListener('click', () => {
+    const link = cachedLinks.find((l) => l.id === currentProfileId);
+    if (link) openEditView(link, 'viewProfile');
+  });
+
+  document.getElementById('profileOpenHere').addEventListener('click', () => {
+    const link = cachedLinks.find((l) => l.id === currentProfileId);
+    if (!link) return;
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.tabs.update(tabs[0].id, { url: link.url });
+      window.close();
+    });
+  });
+
+  document.getElementById('profileOpenNew').addEventListener('click', () => {
+    const link = cachedLinks.find((l) => l.id === currentProfileId);
+    if (link) window.open(link.url, '_blank');
+  });
+
+  document.getElementById('btnAddNote').addEventListener('click', () => {
+    addNote(currentProfileId, document.getElementById('noteInput').value);
+  });
+
+  document.getElementById('noteInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.ctrlKey) {
+      e.preventDefault();
+      addNote(currentProfileId, document.getElementById('noteInput').value);
+    }
   });
 });
