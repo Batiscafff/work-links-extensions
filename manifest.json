@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Быстрый доступ к ссылкам Google Meet",
   "permissions": ["storage", "tabs"],
+  "host_permissions": ["https://t.me/*"],
   "action": {
     "default_popup": "popup.html",
     "default_title": "Meet Links",

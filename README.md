@@ -10,6 +10,7 @@ A Chrome extension for managing Google Meet conference links. Keep all your recu
 - **Save conferences** — store a name and Google Meet URL for each recurring meeting
 - **Quick open** — open a meeting in the current tab or a new tab directly from the popup
 - **Conference profile** — click any card to open a detail view with action buttons
+- **Participants** — attach Telegram usernames to a conference; avatars are fetched automatically from public profiles and displayed as a collage (up to 4), cached for one week
 - **Notes** — add multiple timestamped notes to each conference; sort by newest or oldest, search notes by text, delete individually
 - **Edit & delete** — update or remove any entry at any time
 - **Search** — filter conferences by name in real time
@@ -38,6 +39,8 @@ To apply changes after editing source files, click the **↺ reload** button on 
 | Open in new tab | Click **↗** on a card or **Новая вкладка** in the profile |
 | Edit | Click the **pencil** icon on a card or in the profile header |
 | Delete | Click the **trash** icon on a card |
+| Manage participants | Open profile → click the **person** icon → add @username → avatar is fetched automatically |
+| Remove a participant | Open participants view → click **✕** next to a username |
 | Add a note | Open profile → type in the notes field → **Добавить** or **Ctrl+Enter** |
 | Delete a note | Open profile → click **✕** on a note card |
 | Search notes | Open profile → click the **magnifying glass** in the notes toolbar → type to filter → **Esc** to close |
@@ -66,3 +69,4 @@ To apply changes after editing source files, click the **↺ reload** button on 
 |---|---|
 | `storage` | Save conference links and theme preference locally |
 | `tabs` | Open a meeting URL in the current active tab |
+| `host_permissions: https://t.me/*` | Fetch participant profile photos from Telegram public pages |

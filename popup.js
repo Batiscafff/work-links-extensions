@@ -212,8 +212,7 @@ function openProfileView(link, direction = 'forward') {
   document.getElementById('profileTitle').textContent = link.name;
 
   const avatar = document.getElementById('profileAvatar');
-  avatar.style.background = avatarColor(link.name);
-  avatar.textContent = initials(link.name);
+  setAvatarEl(avatar, link);
 
   document.getElementById('profileName').textContent = link.name;
   document.getElementById('profileUrl').textContent  = link.url.replace('https://', '');
@@ -221,6 +220,236 @@ function openProfileView(link, direction = 'forward') {
   renderNotes(getNotes(link));
 
   showView('viewProfile', direction);
+}
+
+/* ── Участники ─────────────────────────────────── */
+const AVATAR_TTL = 7 * 24 * 60 * 60 * 1000;
+let currentParticipantsId = null;
+
+function getParticipants(link) {
+  return Array.isArray(link.participants) ? link.participants : [];
+}
+
+async function fetchTelegramAvatar(username) {
+  try {
+    const resp = await fetch(`https://t.me/${username}`);
+    if (!resp.ok) return null;
+    const html = await resp.text();
+    const match = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/) ||
+                  html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:image"/);
+    const url = match ? match[1] : null;
+    // Filter out the generic Telegram logo returned for private/missing profiles
+    if (!url || url.includes('telegram.org/img/')) return null;
+    return url;
+  } catch {
+    return null;
+  }
+}
+
+function makeCollageSlot(participant) {
+  if (participant.avatarUrl) {
+    const img = document.createElement('img');
+    img.className = 'collage-cell';
+    img.src = participant.avatarUrl;
+    img.alt = '';
+    img.onerror = function () {
+      const div = document.createElement('div');
+      div.className = 'collage-cell collage-initials';
+      div.style.gridRow    = this.style.gridRow;
+      div.style.gridColumn = this.style.gridColumn;
+      div.style.background = avatarColor(participant.username);
+      div.textContent = (participant.username[0] || '?').toUpperCase();
+      this.replaceWith(div);
+    };
+    return img;
+  }
+  const div = document.createElement('div');
+  div.className = 'collage-cell collage-initials';
+  div.style.background = avatarColor(participant.username);
+  div.textContent = (participant.username[0] || '?').toUpperCase();
+  return div;
+}
+
+function applyCollage(el, pts) {
+  el.innerHTML = '';
+  el.textContent = '';
+  el.style.background = 'var(--border)';
+  el.style.display = 'grid';
+  el.style.gap = '1px';
+
+  if (pts.length === 1) {
+    el.style.gridTemplateColumns = '1fr';
+    el.style.gridTemplateRows    = '1fr';
+  } else if (pts.length === 2) {
+    el.style.gridTemplateColumns = '1fr 1fr';
+    el.style.gridTemplateRows    = '1fr';
+  } else {
+    // 3 or 4: 2x2 grid; for 3, slot 0 spans 2 rows
+    el.style.gridTemplateColumns = '1fr 1fr';
+    el.style.gridTemplateRows    = '1fr 1fr';
+  }
+
+  pts.forEach((p, i) => {
+    const slot = makeCollageSlot(p);
+    if (pts.length === 3 && i === 0) slot.style.gridRow = '1 / span 2';
+    el.appendChild(slot);
+  });
+}
+
+function setAvatarEl(el, link) {
+  const pts = getParticipants(link).slice(0, 4);
+  if (pts.length) {
+    applyCollage(el, pts);
+  } else {
+    el.innerHTML = '';
+    el.style.display = '';
+    el.style.gap = '';
+    el.style.gridTemplateColumns = '';
+    el.style.gridTemplateRows = '';
+    el.style.background = avatarColor(link.name);
+    el.textContent = initials(link.name);
+  }
+}
+
+async function addParticipant(linkId, username) {
+  const clean = username.replace(/^@/, '').trim();
+  if (!clean) return;
+
+  const btn   = document.getElementById('btnAddParticipant');
+  const input = document.getElementById('participantInput');
+  btn.disabled = true;
+  btn.classList.add('loading');
+
+  const avatarUrl = await fetchTelegramAvatar(clean);
+
+  const newP = { username: clean, avatarUrl, cachedAt: Date.now() };
+
+  chrome.storage.local.get(STORAGE_KEY, (result) => {
+    const links = (result[STORAGE_KEY] || []).map((l) => {
+      if (l.id !== linkId) return l;
+      const existing = getParticipants(l).filter((p) => p.username !== clean);
+      return { ...l, participants: [...existing, newP] };
+    });
+    saveLinks(links, () => {
+      btn.disabled = false;
+      btn.classList.remove('loading');
+      input.value = '';
+      const updated = cachedLinks.find((l) => l.id === linkId);
+      if (updated) {
+        renderParticipantsList(updated);
+        setAvatarEl(document.getElementById('profileAvatar'), updated);
+      }
+      applySearch();
+    });
+  });
+}
+
+function deleteParticipant(linkId, username) {
+  chrome.storage.local.get(STORAGE_KEY, (result) => {
+    const links = (result[STORAGE_KEY] || []).map((l) => {
+      if (l.id !== linkId) return l;
+      return { ...l, participants: getParticipants(l).filter((p) => p.username !== username) };
+    });
+    saveLinks(links, () => {
+      const updated = cachedLinks.find((l) => l.id === linkId);
+      if (updated) {
+        renderParticipantsList(updated);
+        setAvatarEl(document.getElementById('profileAvatar'), updated);
+      }
+      applySearch();
+    });
+  });
+}
+
+async function refreshStaleAvatars(linkId) {
+  const link = cachedLinks.find((l) => l.id === linkId);
+  if (!link) return;
+  const pts = getParticipants(link);
+  const stale = pts.filter((p) => Date.now() - p.cachedAt > AVATAR_TTL);
+  if (!stale.length) return;
+
+  const refreshed = await Promise.all(
+    pts.map(async (p) => {
+      if (Date.now() - p.cachedAt <= AVATAR_TTL) return p;
+      const avatarUrl = await fetchTelegramAvatar(p.username);
+      return { ...p, avatarUrl: avatarUrl ?? p.avatarUrl, cachedAt: Date.now() };
+    })
+  );
+
+  const links = cachedLinks.map((l) =>
+    l.id === linkId ? { ...l, participants: refreshed } : l
+  );
+  saveLinks(links, () => {
+    const updated = cachedLinks.find((l) => l.id === linkId);
+    if (updated && currentParticipantsId === linkId) renderParticipantsList(updated);
+  });
+}
+
+function renderParticipantsList(link) {
+  const list = document.getElementById('participantsList');
+  list.innerHTML = '';
+  const pts = getParticipants(link);
+
+  if (!pts.length) {
+    const empty = document.createElement('div');
+    empty.className = 'participants-empty';
+    empty.textContent = 'Нет участников';
+    list.appendChild(empty);
+    return;
+  }
+
+  pts.forEach((p) => {
+    const row = document.createElement('div');
+    row.className = 'participant-item';
+
+    const ava = document.createElement('div');
+    ava.className = 'participant-avatar';
+    if (p.avatarUrl) {
+      const img = document.createElement('img');
+      img.src = p.avatarUrl;
+      img.alt = '';
+      img.className = 'participant-avatar-img';
+      img.onerror = () => {
+        img.replaceWith(makeParticipantInitial(p.username));
+      };
+      ava.appendChild(img);
+    } else {
+      ava.appendChild(makeParticipantInitial(p.username));
+    }
+
+    const name = document.createElement('span');
+    name.className = 'participant-username';
+    name.textContent = '@' + p.username;
+
+    const del = document.createElement('button');
+    del.className = 'participant-delete';
+    del.title = 'Удалить';
+    del.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+      <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+    </svg>`;
+    del.addEventListener('click', () => deleteParticipant(link.id, p.username));
+
+    row.appendChild(ava);
+    row.appendChild(name);
+    row.appendChild(del);
+    list.appendChild(row);
+  });
+}
+
+function makeParticipantInitial(username) {
+  const div = document.createElement('div');
+  div.className = 'participant-avatar-initial';
+  div.style.background = avatarColor(username);
+  div.textContent = (username[0] || '?').toUpperCase();
+  return div;
+}
+
+function openParticipantsView(link) {
+  currentParticipantsId = link.id;
+  document.getElementById('participantInput').value = '';
+  renderParticipantsList(link);
+  showView('viewParticipants', 'forward');
+  refreshStaleAvatars(link.id);
 }
 
 /* ── Карточки ──────────────────────────────────── */
@@ -388,8 +617,7 @@ function createCard(link) {
 
   const avatar = document.createElement('div');
   avatar.className = 'card-avatar';
-  avatar.style.background = avatarColor(link.name);
-  avatar.textContent = initials(link.name);
+  setAvatarEl(avatar, link);
 
   const body   = document.createElement('div');
   body.className = 'card-body';
@@ -572,6 +800,25 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       addNote(currentProfileId, document.getElementById('noteInput').value);
     }
+  });
+
+  document.getElementById('profileParticipants').addEventListener('click', () => {
+    const link = cachedLinks.find((l) => l.id === currentProfileId);
+    if (link) openParticipantsView(link);
+  });
+
+  document.getElementById('btnParticipantsBack').addEventListener('click', () => {
+    const link = cachedLinks.find((l) => l.id === currentParticipantsId);
+    if (link) setAvatarEl(document.getElementById('profileAvatar'), link);
+    showView('viewProfile', 'back');
+  });
+
+  document.getElementById('btnAddParticipant').addEventListener('click', () => {
+    addParticipant(currentParticipantsId, document.getElementById('participantInput').value);
+  });
+
+  document.getElementById('participantInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') addParticipant(currentParticipantsId, e.target.value);
   });
 
   document.getElementById('btnNotesSort').addEventListener('click', toggleNotesSort);
