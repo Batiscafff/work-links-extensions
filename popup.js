@@ -54,7 +54,9 @@ function showView(id, direction) {
 }
 
 /* ── Профиль ───────────────────────────────────── */
-let currentProfileId = null;
+let currentProfileId   = null;
+let notesSortOrder     = 'desc'; // 'desc' = новые сверху, 'asc' = старые сверху
+let notesSearchQuery   = '';
 
 function getNotes(link) {
   if (typeof link.notes === 'string' && link.notes.trim()) {
@@ -80,15 +82,23 @@ function renderNotes(notes) {
   const list = document.getElementById('notesList');
   list.innerHTML = '';
 
-  if (!notes.length) {
+  const filtered = notesSearchQuery
+    ? notes.filter((n) => n.text.toLowerCase().includes(notesSearchQuery))
+    : notes;
+
+  const sorted = [...filtered].sort((a, b) =>
+    notesSortOrder === 'desc' ? b.createdAt - a.createdAt : a.createdAt - b.createdAt
+  );
+
+  if (!sorted.length) {
     const empty = document.createElement('div');
     empty.className = 'notes-empty';
-    empty.textContent = 'Заметок пока нет';
+    empty.textContent = notesSearchQuery ? 'Заметки не найдены' : 'Заметок пока нет';
     list.appendChild(empty);
     return;
   }
 
-  [...notes].sort((a, b) => b.createdAt - a.createdAt).forEach((note) => {
+  sorted.forEach((note) => {
     const card = document.createElement('div');
     card.className = 'note-card';
 
@@ -150,8 +160,55 @@ function deleteNote(linkId, noteId) {
   });
 }
 
+const SORT_ICON_DESC = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+  <path d="M3 6h14M3 11h9M3 16h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <path d="M20 4v14m0 0l-2.5-2.5M20 18l2.5-2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+const SORT_ICON_ASC = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+  <path d="M3 6h5M3 11h9M3 16h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <path d="M20 20V6m0 0l-2.5 2.5M20 6l2.5 2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+function toggleNotesSort() {
+  notesSortOrder = notesSortOrder === 'desc' ? 'asc' : 'desc';
+  const btn = document.getElementById('btnNotesSort');
+  btn.innerHTML = notesSortOrder === 'desc' ? SORT_ICON_DESC : SORT_ICON_ASC;
+  btn.title     = notesSortOrder === 'desc' ? 'Сначала новые' : 'Сначала старые';
+  btn.classList.toggle('active', notesSortOrder === 'asc');
+  const link = cachedLinks.find((l) => l.id === currentProfileId);
+  if (link) renderNotes(getNotes(link));
+}
+
+function toggleNotesSearch() {
+  const bar  = document.getElementById('notesSearchBar');
+  const btn  = document.getElementById('btnNotesSearch');
+  const form = document.getElementById('notesAddForm');
+  const isOpen = bar.classList.toggle('active');
+  btn.classList.toggle('active', isOpen);
+  form.classList.toggle('hidden', isOpen);
+  if (isOpen) {
+    setTimeout(() => document.getElementById('notesSearchInput').focus(), 50);
+  } else {
+    notesSearchQuery = '';
+    document.getElementById('notesSearchInput').value = '';
+    const link = cachedLinks.find((l) => l.id === currentProfileId);
+    if (link) renderNotes(getNotes(link));
+  }
+}
+
 function openProfileView(link, direction = 'forward') {
   currentProfileId = link.id;
+
+  notesSearchQuery = '';
+  document.getElementById('notesSearchInput').value = '';
+  const notesBar = document.getElementById('notesSearchBar');
+  if (notesBar.classList.contains('active')) {
+    notesBar.classList.remove('active');
+    document.getElementById('btnNotesSearch').classList.remove('active');
+    document.getElementById('notesAddForm').classList.remove('hidden');
+  }
+
   document.getElementById('profileTitle').textContent = link.name;
 
   const avatar = document.getElementById('profileAvatar');
@@ -515,5 +572,19 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       addNote(currentProfileId, document.getElementById('noteInput').value);
     }
+  });
+
+  document.getElementById('btnNotesSort').addEventListener('click', toggleNotesSort);
+
+  document.getElementById('btnNotesSearch').addEventListener('click', toggleNotesSearch);
+
+  document.getElementById('notesSearchInput').addEventListener('input', (e) => {
+    notesSearchQuery = e.target.value.trim().toLowerCase();
+    const link = cachedLinks.find((l) => l.id === currentProfileId);
+    if (link) renderNotes(getNotes(link));
+  });
+
+  document.getElementById('notesSearchInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') toggleNotesSearch();
   });
 });

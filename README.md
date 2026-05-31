@@ -10,7 +10,7 @@ A Chrome extension for managing Google Meet conference links. Keep all your recu
 - **Save conferences** — store a name and Google Meet URL for each recurring meeting
 - **Quick open** — open a meeting in the current tab or a new tab directly from the popup
 - **Conference profile** — click any card to open a detail view with action buttons
-- **Notes** — add multiple timestamped notes to each conference; notes are sorted newest-first and can be deleted individually
+- **Notes** — add multiple timestamped notes to each conference; sort by newest or oldest, search notes by text, delete individually
 - **Edit & delete** — update or remove any entry at any time
 - **Search** — filter conferences by name in real time
 - **Dark / light theme** — toggle with a single click, preference is saved
@@ -40,7 +40,9 @@ To apply changes after editing source files, click the **↺ reload** button on 
 | Delete | Click the **trash** icon on a card |
 | Add a note | Open profile → type in the notes field → **Добавить** or **Ctrl+Enter** |
 | Delete a note | Open profile → click **✕** on a note card |
-| Search | Click the **magnifying glass** → type to filter by name → **Esc** to close |
+| Search notes | Open profile → click the **magnifying glass** in the notes toolbar → type to filter → **Esc** to close |
+| Sort notes | Open profile → click the **sort** icon in the notes toolbar to toggle newest/oldest first |
+| Search conferences | Click the **magnifying glass** in the main header → type to filter by name → **Esc** to close |
 | Toggle theme | Click the **moon / sun** icon in the header |
 
 ## Project Structure

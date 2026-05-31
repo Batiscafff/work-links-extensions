@@ -127,8 +127,26 @@
       </div>
 
       <div class="profile-notes-section">
-        <span class="profile-notes-label">Заметки</span>
-        <div class="notes-add-form">
+        <div class="notes-toolbar">
+          <span class="profile-notes-label">Заметки</span>
+          <button class="btn-notes-search" id="btnNotesSearch" title="Поиск по заметкам">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+              <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+              <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <button class="btn-notes-sort" id="btnNotesSort" title="Сначала новые">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+              <path d="M3 6h14M3 11h9M3 16h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M20 4v14m0 0l-2.5-2.5M20 18l2.5-2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="notes-search-bar" id="notesSearchBar">
+          <input type="text" id="notesSearchInput" class="search-input"
+            placeholder="Поиск по заметкам..." autocomplete="off" />
+        </div>
+        <div class="notes-add-form" id="notesAddForm">
           <textarea class="notes-add-input" id="noteInput"
             placeholder="Новая заметка..." rows="2"></textarea>
           <div class="notes-add-footer">
