@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Meet Links",
+  "version": "1.0.0",
+  "description": "Быстрый доступ к ссылкам Google Meet",
+  "permissions": ["storage", "tabs"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Meet Links",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
