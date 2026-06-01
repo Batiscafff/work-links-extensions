@@ -51,13 +51,25 @@ To apply changes after editing source files, click the **↺ reload** button on 
 ## Project Structure
 
 ```
-├── manifest.json       # Extension manifest (MV3)
-├── popup.html          # Single HTML entry point (two views)
-├── popup.css           # All styles with CSS custom properties for theming
-├── popup.js            # All logic — storage, rendering, search, view switching
+├── manifest.json          # Extension manifest (MV3)
+├── popup.html             # Single HTML entry point — all views
+├── popup.css              # All styles with CSS custom properties for theming
+├── popup.js               # Entry point — DOMContentLoaded, event listeners, wires modules
+├── js/
+│   ├── state.js           # Shared mutable state object + constants
+│   ├── storage.js         # chrome.storage helpers: saveLinks, loadLinks, deleteLink
+│   ├── views.js           # showView — CSS animation view switcher
+│   ├── theme.js           # loadTheme, applyTheme, toggleTheme
+│   ├── utils.js           # Pure helpers: avatarColor, initials, makeIconBtn, formatNoteDate
+│   ├── collage.js         # Avatar collage: makeCollageSlot, applyCollage, setAvatarEl
+│   ├── notes.js           # Notes CRUD, renderNotes, toggleNotesSort, toggleNotesSearch
+│   ├── profile.js         # openProfileView
+│   ├── cards.js           # createCard, renderList, search (applySearch, toggleSearch)
+│   ├── editor.js          # openEditView, resetAddForm, saveLink
+│   └── participants.js    # Participants CRUD, avatar fetch, renderParticipantsList
 └── icons/
-    ├── logo.png        # Original logo source
-    ├── logo_cropped.png  # Square crop used in popup header
+    ├── logo.png           # Original logo source
+    ├── logo_cropped.png   # Square crop used in popup header
     ├── icon16.png
     ├── icon48.png
     └── icon128.png
