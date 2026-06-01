@@ -752,8 +752,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('btnBack').addEventListener('click', () => {
+    const returnTo = currentEditReturn;
     resetAddForm();
-    showView('viewList', 'back');
+    showView(returnTo === 'viewProfile' ? 'viewProfile' : 'viewList', 'back');
   });
 
   document.getElementById('btnSave').addEventListener('click', saveLink);
