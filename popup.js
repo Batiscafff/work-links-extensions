@@ -6,8 +6,9 @@ import { initCards, applySearch, toggleSearch,
          closeSearch }                              from './js/cards.js';
 import { openEditView, resetAddForm, saveLink }     from './js/editor.js';
 import { openProfileView }                          from './js/profile.js';
-import { setAvatarEl }                              from './js/collage.js';
-import { openParticipantsView, addParticipant }     from './js/participants.js';
+import { setProfileAvatar }                         from './js/collage.js';
+import { openParticipantsView, addParticipant,
+         refreshAllAvatars }                        from './js/participants.js';
 import { addNote, getNotes, renderNotes,
          toggleNotesSort, toggleNotesSearch }       from './js/notes.js';
 
@@ -18,6 +19,7 @@ initCards({
     openProfileView(fresh);
   },
   onEdit: (link) => openEditView(link),
+  onRefreshAvatars: (linkId, avaEl) => refreshAllAvatars(linkId, avaEl),
 });
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -92,6 +94,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (link) openParticipantsView(link);
   });
 
+  document.getElementById('profileAvatar').addEventListener('click', (e) => {
+    refreshAllAvatars(state.currentProfileId, e.currentTarget);
+  });
+
   // ── Notes ─────────────────────────────────────────
   document.getElementById('btnAddNote').addEventListener('click', () => {
     addNote(state.currentProfileId, document.getElementById('noteInput').value);
@@ -122,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Participants view ─────────────────────────────
   document.getElementById('btnParticipantsBack').addEventListener('click', () => {
     const link = state.cachedLinks.find((l) => l.id === state.currentParticipantsId);
-    if (link) setAvatarEl(document.getElementById('profileAvatar'), link);
+    if (link) setProfileAvatar(link);
     showView('viewProfile', 'back');
   });
 

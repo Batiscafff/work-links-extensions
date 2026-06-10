@@ -2,14 +2,17 @@ import { state } from './state.js';
 import { deleteLink } from './storage.js';
 import { makeIconBtn } from './utils.js';
 import { setAvatarEl } from './collage.js';
+import { confirmDialog } from './confirm.js';
 
-// Injected by initCards() in popup.js to avoid circular deps with profile/editor
-let _onOpen = null;
-let _onEdit = null;
+// Injected by initCards() in popup.js to avoid circular deps with profile/editor/participants
+let _onOpen           = null;
+let _onEdit           = null;
+let _onRefreshAvatars = null;
 
-export function initCards({ onOpen, onEdit }) {
-  _onOpen = onOpen;
-  _onEdit = onEdit;
+export function initCards({ onOpen, onEdit, onRefreshAvatars }) {
+  _onOpen           = onOpen;
+  _onEdit           = onEdit;
+  _onRefreshAvatars = onRefreshAvatars;
 }
 
 export function applySearch() {
@@ -48,6 +51,16 @@ export function createCard(link) {
   const avatar = document.createElement('div');
   avatar.className = 'card-avatar';
   setAvatarEl(avatar, link);
+
+  const hasParticipants = (Array.isArray(link.participants) ? link.participants : []).length > 0;
+  if (hasParticipants) {
+    avatar.classList.add('clickable');
+    avatar.title = 'Обновить аватары участников';
+    avatar.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (_onRefreshAvatars) _onRefreshAvatars(link.id, avatar);
+    });
+  }
 
   const body   = document.createElement('div');
   body.className = 'card-body';
@@ -116,9 +129,10 @@ export function createCard(link) {
     e.stopPropagation();
     if (_onEdit) _onEdit(link);
   });
-  delBtn.addEventListener('click', (e) => {
+  delBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
-    deleteLink(link.id, () => applySearch());
+    const ok = await confirmDialog(`Удалить конференцию «${link.name}»?`);
+    if (ok) deleteLink(link.id, () => applySearch());
   });
   card.addEventListener('click', () => {
     const fresh = state.cachedLinks.find((l) => l.id === link.id) || link;

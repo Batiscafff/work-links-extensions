@@ -63,3 +63,12 @@ export function setAvatarEl(el, link) {
     el.textContent               = initials(link.name);
   }
 }
+
+// Profile avatar: collage + a `clickable` flag (only meaningful when participants exist)
+export function setProfileAvatar(link) {
+  const el = document.getElementById('profileAvatar');
+  setAvatarEl(el, link);
+  const hasParticipants = (Array.isArray(link.participants) ? link.participants : []).length > 0;
+  el.classList.toggle('clickable', hasParticipants);
+  el.title = hasParticipants ? 'Обновить аватары участников' : '';
+}

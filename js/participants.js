@@ -1,7 +1,8 @@
 import { state, STORAGE_KEY, AVATAR_TTL } from './state.js';
 import { saveLinks } from './storage.js';
 import { avatarColor } from './utils.js';
-import { setAvatarEl } from './collage.js';
+import { setProfileAvatar } from './collage.js';
+import { confirmDialog } from './confirm.js';
 import { showView } from './views.js';
 import { applySearch } from './cards.js';
 
@@ -72,7 +73,10 @@ export function renderParticipantsList(link) {
     del.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none">
       <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
     </svg>`;
-    del.addEventListener('click', () => deleteParticipant(link.id, p.username));
+    del.addEventListener('click', async () => {
+      const ok = await confirmDialog(`Удалить участника @${p.username}?`);
+      if (ok) deleteParticipant(link.id, p.username);
+    });
 
     row.appendChild(ava);
     row.appendChild(name);
@@ -106,10 +110,39 @@ export async function addParticipant(linkId, username) {
       const updated = state.cachedLinks.find((l) => l.id === linkId);
       if (updated) {
         renderParticipantsList(updated);
-        setAvatarEl(document.getElementById('profileAvatar'), updated);
+        setProfileAvatar(updated);
       }
       applySearch();
     });
+  });
+}
+
+export async function refreshAllAvatars(linkId, avaEl) {
+  const link = state.cachedLinks.find((l) => l.id === linkId);
+  if (!link) return;
+  const pts = getParticipants(link);
+  if (!pts.length) return;
+
+  if (avaEl) avaEl.classList.add('loading');
+
+  const refreshed = await Promise.all(
+    pts.map(async (p) => {
+      const avatarUrl = await fetchTelegramAvatar(p.username);
+      return { ...p, avatarUrl, cachedAt: Date.now() };
+    })
+  );
+
+  const links = state.cachedLinks.map((l) =>
+    l.id === linkId ? { ...l, participants: refreshed } : l
+  );
+  saveLinks(links, () => {
+    if (avaEl) avaEl.classList.remove('loading');
+    const updated = state.cachedLinks.find((l) => l.id === linkId);
+    if (updated) {
+      if (state.currentProfileId === linkId)      setProfileAvatar(updated);
+      if (state.currentParticipantsId === linkId) renderParticipantsList(updated);
+    }
+    applySearch(); // re-renders card list with fresh collages
   });
 }
 
@@ -123,7 +156,7 @@ export function deleteParticipant(linkId, username) {
       const updated = state.cachedLinks.find((l) => l.id === linkId);
       if (updated) {
         renderParticipantsList(updated);
-        setAvatarEl(document.getElementById('profileAvatar'), updated);
+        setProfileAvatar(updated);
       }
       applySearch();
     });

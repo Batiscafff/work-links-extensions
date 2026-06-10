@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { setAvatarEl } from './collage.js';
+import { setProfileAvatar } from './collage.js';
 import { getNotes, renderNotes } from './notes.js';
 import { showView } from './views.js';
 
@@ -16,7 +16,7 @@ export function openProfileView(link, direction = 'forward') {
   }
 
   document.getElementById('profileTitle').textContent = link.name;
-  setAvatarEl(document.getElementById('profileAvatar'), link);
+  setProfileAvatar(link);
   document.getElementById('profileName').textContent = link.name;
   document.getElementById('profileUrl').textContent  = link.url.replace('https://', '');
   document.getElementById('noteInput').value = '';

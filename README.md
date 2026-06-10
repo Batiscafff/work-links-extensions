@@ -10,7 +10,7 @@ A Chrome extension for managing Google Meet conference links. Keep all your recu
 - **Save conferences** — store a name and Google Meet URL for each recurring meeting
 - **Quick open** — open a meeting in the current tab or a new tab directly from the popup
 - **Conference profile** — click any card to open a detail view with action buttons
-- **Participants** — attach Telegram usernames to a conference; avatars are fetched automatically from public profiles and displayed as a collage (up to 4), cached for one week
+- **Participants** — attach Telegram usernames to a conference; avatars are fetched automatically from public profiles and displayed as a collage (up to 4), cached for one day and refreshable on click
 - **Notes** — add multiple timestamped notes to each conference; sort by newest or oldest, search notes by text, delete individually
 - **Edit & delete** — update or remove any entry at any time
 - **Search** — filter conferences by name in real time
@@ -38,9 +38,10 @@ To apply changes after editing source files, click the **↺ reload** button on 
 | Open in current tab | Click **→** on a card or **Эта вкладка** in the profile |
 | Open in new tab | Click **↗** on a card or **Новая вкладка** in the profile |
 | Edit | Click the **pencil** icon on a card or in the profile header |
-| Delete | Click the **trash** icon on a card |
+| Delete | Click the **trash** icon on a card → confirm in the dialog |
 | Manage participants | Open profile → click the **person** icon → add @username → avatar is fetched automatically |
-| Remove a participant | Open participants view → click **✕** next to a username |
+| Refresh avatars | Click a conference avatar (collage) — in the list or on the profile — to re-fetch all participant photos |
+| Remove a participant | Open participants view → click **✕** next to a username → confirm in the dialog |
 | Add a note | Open profile → type in the notes field → **Добавить** or **Ctrl+Enter** |
 | Delete a note | Open profile → click **✕** on a note card |
 | Search notes | Open profile → click the **magnifying glass** in the notes toolbar → type to filter → **Esc** to close |
@@ -61,12 +62,13 @@ To apply changes after editing source files, click the **↺ reload** button on 
 │   ├── views.js           # showView — CSS animation view switcher
 │   ├── theme.js           # loadTheme, applyTheme, toggleTheme
 │   ├── utils.js           # Pure helpers: avatarColor, initials, makeIconBtn, formatNoteDate
-│   ├── collage.js         # Avatar collage: makeCollageSlot, applyCollage, setAvatarEl
+│   ├── collage.js         # Avatar collage: makeCollageSlot, applyCollage, setAvatarEl, setProfileAvatar
 │   ├── notes.js           # Notes CRUD, renderNotes, toggleNotesSort, toggleNotesSearch
 │   ├── profile.js         # openProfileView
 │   ├── cards.js           # createCard, renderList, search (applySearch, toggleSearch)
 │   ├── editor.js          # openEditView, resetAddForm, saveLink
-│   └── participants.js    # Participants CRUD, avatar fetch, renderParticipantsList
+│   ├── participants.js    # Participants CRUD, avatar fetch, renderParticipantsList
+│   └── confirm.js         # confirmDialog — in-popup confirmation modal
 └── icons/
     ├── logo.png           # Original logo source
     ├── logo_cropped.png   # Square crop used in popup header
